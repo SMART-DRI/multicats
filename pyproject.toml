@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "multicats"
+version = "0.1.0"
+description = "Multiple-job optimisation for carbon intensity and green scheduling"
+requires-python = ">=3.11"
+dependencies = ["typing_extensions>=4.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["multicats"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["e2e: end-to-end tests requiring a live Slurm cluster"]
+addopts = "-m 'not e2e'"
+
+[tool.basedpyright]
+reportAny = false
+reportExplicitAny = false
