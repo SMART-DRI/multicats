@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
+from cats.providers.base import BaseProvider
 from typing_extensions import override
 
 from ..interfaces import Scheduler
@@ -46,14 +47,18 @@ def _job_cost(
 
 
 class CoastScheduler(Scheduler):
-    def __init__(self, config: CoastConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: CoastConfig | None = None,
+        carbon: BaseProvider | None = None,
+    ) -> None:
         self.config: CoastConfig = config or CoastConfig()
+        self.carbon: BaseProvider | None = carbon
 
     @override
     def assign(
         self,
         jobs: list[JobParams],
         background_load: float,
-        carbon_forecast: dict[datetime, float],
     ) -> dict[str, datetime]:
         raise NotImplementedError

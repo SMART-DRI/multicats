@@ -24,7 +24,6 @@ class RandomScheduler(Scheduler):
         self,
         jobs: list[JobParams],
         background_load: float,
-        carbon_forecast: dict[datetime, float],
     ) -> dict[str, datetime]:
         result = {}
         for job in jobs:

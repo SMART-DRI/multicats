@@ -35,7 +35,6 @@ class Scheduler(ABC):
         self,
         jobs: list[JobParams],
         background_load: float,
-        carbon_forecast: dict[datetime, float],
     ) -> dict[str, datetime]:
         """Return a mapping of job_id -> assigned start time for all jobs."""
 

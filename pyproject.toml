@@ -7,10 +7,16 @@ name = "multicats"
 version = "0.1.0"
 description = "Multiple-job optimisation for carbon intensity and green scheduling"
 requires-python = ">=3.11"
-dependencies = ["typing_extensions>=4.0"]
+dependencies = [
+    "typing_extensions>=4.0",
+    "climate-aware-task-scheduler @ git+https://github.com/GreenScheduler/cats.git",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["multicats"]

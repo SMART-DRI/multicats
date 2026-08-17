@@ -72,7 +72,7 @@ def assignments(
     )
 
     scheduler = RandomScheduler(RandomConfig(window=WINDOW, seed=42))
-    return scheduler.assign(jobs, provider.background_load(), {})
+    return scheduler.assign(jobs, provider.background_load())
 
 
 def test_all_jobs_are_pending(
