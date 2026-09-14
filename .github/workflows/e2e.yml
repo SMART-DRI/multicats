@@ -1,0 +1,30 @@
+name: e2e
+
+# The e2e suite brings up a Slurm cluster in Docker, so it is slow and depends
+# on an external image. Run it on demand, on changes to the cluster harness or
+# the Slurm-facing code, and weekly to catch upstream image drift.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1"
+  pull_request:
+    paths:
+      - "cluster/**"
+      - "multicats/providers/**"
+      - "multicats/controllers/**"
+      - "tests/e2e/**"
+      - ".github/workflows/e2e.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      # Starts the cluster, installs the job_submit plugin and multicats,
+      # runs `pytest -m e2e`, and tears the cluster down on exit.
+      - run: ./cluster/test_e2e.sh
