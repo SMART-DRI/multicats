@@ -136,3 +136,9 @@ behaviour directly — useful when the controller's assignments do not take.
 - Should `m` be user-specified, or operator-enforced with a cap? Users have an
   incentive to set it low.
 - What heuristics should an operator use to pick `alpha`, `beta`, `gamma`?
+
+## AI policy
+
+multicats has been authored with the assistance of AI tooling, particularly Claude Code and Codex. 
+
+Contributions should follow guidelines established by the [CATS project](https://cats.readthedocs.io/en/latest/devguide.html).
