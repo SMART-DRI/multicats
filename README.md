@@ -139,6 +139,6 @@ behaviour directly — useful when the controller's assignments do not take.
 
 ## AI policy
 
-multicats has been authored with the assistance of AI tooling, particularly Claude Code and Codex. 
+multicats has been authored with the assistance of AI tooling, particularly Claude Code and Codex.
 
 Contributions should follow guidelines established by the [CATS project](https://cats.readthedocs.io/en/latest/devguide.html).
