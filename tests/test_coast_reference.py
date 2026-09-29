@@ -1,0 +1,116 @@
+"""COAST must reproduce the reference implementation (SMART-DRI/algorithms).
+
+The fixture holds micro-batches replayed from the CEA-Curie trace with the
+start slots assigned by the reference solver; see
+``tests/fixtures/make_coast_reference.py``.
+"""
+
+import json
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from multicats.models import JobParams
+from multicats.schedulers.coast import (
+    CoastConfig,
+    _earliest_slot,
+    _feasible_range,
+    _job_cost,
+    _minutes,
+    _to_slot_job,
+    solve_batch,
+)
+
+FIXTURE = Path(__file__).parent / "fixtures" / "coast_reference.json"
+ORIGIN = datetime(2025, 1, 1, tzinfo=UTC)
+DATA: dict[str, Any] = json.loads(FIXTURE.read_text())
+CASES = [
+    pytest.param(case, name, id=f"day{case['day']}-batch{case['batch']}-{name}")
+    for case in DATA["cases"]
+    for name in DATA["settings"]
+]
+
+
+def _jobs(case: dict[str, Any]) -> list[JobParams]:
+    return [
+        JobParams(
+            job_id=j["job_id"],
+            arrival=ORIGIN + timedelta(seconds=j["arrival_seconds"]),
+            resource=j["resource"],
+            duration=timedelta(minutes=j["duration_minutes"]),
+            energy=j["energy_kwh"],
+            deadline=ORIGIN + timedelta(seconds=j["deadline_seconds"]),
+            max_wait=timedelta(minutes=j["max_wait_minutes"]),
+        )
+        for j in case["jobs"]
+    ]
+
+
+def _solve(case: dict[str, Any], cfg: CoastConfig) -> dict[str, int]:
+    decision = ORIGIN + timedelta(seconds=case["decision_seconds"])
+    assign, _ = solve_batch(
+        _jobs(case), decision, ORIGIN, case["carbon"], case["background"], cfg
+    )
+    return assign
+
+
+@pytest.mark.parametrize(("case", "name"), CASES)
+def test_matches_reference(case: dict[str, Any], name: str) -> None:
+    cfg = CoastConfig(**DATA["settings"][name])
+    assert _solve(case, cfg) == case["expected"][name]
+
+
+@pytest.mark.parametrize(("case", "name"), CASES)
+def test_assignments_are_feasible(case: dict[str, Any], name: str) -> None:
+    cfg = CoastConfig(**DATA["settings"][name])
+    decision = _minutes(timedelta(seconds=case["decision_seconds"]))
+    n_slots = len(case["carbon"])
+    for params in _jobs(case):
+        job = _to_slot_job(params, ORIGIN, cfg)
+        start = ORIGIN + _solve(case, cfg)[job.job_id] * cfg.slot_duration
+        feasible = _feasible_range(
+            job, _earliest_slot(job, decision, cfg), n_slots, cfg
+        )
+        assert (start - ORIGIN) // cfg.slot_duration in feasible
+        assert start >= params.arrival
+        assert start - params.arrival <= params.max_wait
+        assert start + timedelta(minutes=job.runtime) <= params.deadline
+
+
+@pytest.mark.parametrize(
+    ("case", "name"), [c for c in CASES if c.values[1] != "carbon_greedy"]
+)
+def test_coast_reaches_nash_equilibrium(case: dict[str, Any], name: str) -> None:
+    """No job can strictly lower its own cost by moving alone."""
+    cfg = CoastConfig(**DATA["settings"][name])
+    assign = _solve(case, cfg)
+    decision = _minutes(timedelta(seconds=case["decision_seconds"]))
+    n_slots = len(case["carbon"])
+    jobs = [_to_slot_job(p, ORIGIN, cfg) for p in _jobs(case)]
+    load = list(case["background"])
+    for job in jobs:
+        for s in range(assign[job.job_id], assign[job.job_id] + job.slots):
+            load[s] += job.resource
+    for job in jobs:
+        t = assign[job.job_id]
+        excl = list(load)
+        for s in range(t, t + job.slots):
+            excl[s] -= job.resource
+        feasible = _feasible_range(
+            job, _earliest_slot(job, decision, cfg), n_slots, cfg
+        )
+        current = _job_cost(job, t, excl, case["carbon"], cfg)
+        best = min(_job_cost(job, s, excl, case["carbon"], cfg) for s in feasible)
+        assert current <= best + 1e-9 * max(1.0, abs(current))
+
+
+def test_zero_congestion_weight_ignores_other_jobs() -> None:
+    """With gamma = 0 each job's choice is independent of the rest of the batch."""
+    case = DATA["cases"][0]
+    cfg = CoastConfig(**DATA["settings"]["carbon_wait"])
+    together = _solve(case, cfg)
+    for job in case["jobs"]:
+        alone = dict(case, jobs=[job])
+        assert _solve(alone, cfg)[job["job_id"]] == together[job["job_id"]]
