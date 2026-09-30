@@ -60,12 +60,13 @@ def test_carbon_cost_spreads_energy_over_occupied_slots() -> None:
 
 
 def test_delay_is_minutes_from_arrival_to_slot_start() -> None:
-    cfg = CoastConfig()
+    cfg = CoastConfig(slot_minutes=30)
     assert _delay(make_job(arrival=10.0), 2, cfg) == pytest.approx(50.0)
 
 
 def test_job_cost_is_weighted_normalised_sum() -> None:
     cfg = CoastConfig(
+        slot_minutes=30,
         carbon_weight=2.0,
         delay_weight=3.0,
         congestion_weight=5.0,
@@ -80,13 +81,15 @@ def test_job_cost_is_weighted_normalised_sum() -> None:
 
 
 def test_all_zero_weights_give_zero_cost() -> None:
-    cfg = CoastConfig(carbon_weight=0.0, delay_weight=0.0, congestion_weight=0.0)
+    cfg = CoastConfig(
+        slot_minutes=30, carbon_weight=0.0, delay_weight=0.0, congestion_weight=0.0
+    )
     assert _job_cost(make_job(), 1, [5.0, 5.0], [300.0, 300.0], cfg) == 0.0
 
 
 def test_best_slot_matches_brute_force() -> None:
     """The sliding-window best response equals the argmin of the cost."""
-    cfg = CoastConfig(congestion_weight=0.01)
+    cfg = CoastConfig(slot_minutes=30, congestion_weight=0.01)
     carbon = [180.0, 120.0, 60.0, 90.0, 150.0, 40.0, 200.0, 70.0]
     load = [30.0, 10.0, 80.0, 0.0, 20.0, 60.0, 5.0, 0.0]
     for slots in (1, 2, 3):
@@ -97,5 +100,5 @@ def test_best_slot_matches_brute_force() -> None:
 
 
 def test_best_slot_breaks_ties_to_earliest() -> None:
-    cfg = CoastConfig(delay_weight=0.0, congestion_weight=0.0)
+    cfg = CoastConfig(slot_minutes=30, delay_weight=0.0, congestion_weight=0.0)
     assert _best_slot(make_job(), range(3), [0.0] * 3, [50.0] * 3, cfg) == 0

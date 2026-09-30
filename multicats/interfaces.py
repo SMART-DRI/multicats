@@ -1,6 +1,7 @@
 """Abstract interfaces for the three pluggable components."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from datetime import datetime
 
 from .models import JobParams
@@ -35,8 +36,11 @@ class Scheduler(ABC):
         self,
         jobs: list[JobParams],
         background_load: float,
-    ) -> dict[str, datetime]:
-        """Return a mapping of job_id -> assigned start time for all jobs."""
+    ) -> Mapping[str, datetime | None]:
+        """Return a mapping of job_id -> assigned start time for all jobs.
+
+        ``None`` means the scheduler rejects the job (it has no feasible start).
+        """
 
 
 class Controller(ABC):
