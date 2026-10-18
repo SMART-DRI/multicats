@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Final
 
 import pytest
+
 from multicats.models import JobParams
 from multicats.schedulers.coast import (
     CoastConfig,
@@ -10,7 +11,6 @@ from multicats.schedulers.coast import (
     calibrate,
     slot_origin,
 )
-
 from tests.fakes import FakeProvider
 
 NOW = datetime(2025, 1, 1, 12, 7, tzinfo=UTC)  # current slot starts 12:00

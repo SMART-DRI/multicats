@@ -11,11 +11,11 @@ from collections.abc import Iterator, Mapping
 from datetime import UTC, datetime, timedelta
 
 import pytest
+
 from multicats.controllers.slurm import SlurmController, SlurmControllerConfig
 from multicats.models import JobParams
 from multicats.providers.slurm_cli import SlurmCLIConfig, SlurmCLIProvider
 from multicats.schedulers.coast import CoastConfig, CoastScheduler, slot_origin
-
 from tests.e2e.conftest import submit_held_jobs
 from tests.fakes import FakeProvider
 

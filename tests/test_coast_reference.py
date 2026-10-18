@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+
 from multicats.models import JobParams
 from multicats.schedulers.coast import (
     CoastConfig,

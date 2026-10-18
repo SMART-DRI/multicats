@@ -9,10 +9,10 @@ verifies Slurm reflects the correct StartTime.
 from datetime import UTC, datetime, timedelta
 
 import pytest
+
 from multicats.controllers.slurm import SlurmController, SlurmControllerConfig
 from multicats.providers.slurm_cli import SlurmCLIConfig, SlurmCLIProvider
 from multicats.schedulers.random import RandomConfig, RandomScheduler
-
 from tests.e2e.conftest import submit_held_jobs
 
 pytestmark = pytest.mark.e2e
