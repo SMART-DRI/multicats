@@ -12,6 +12,8 @@ on:
       - "cluster/**"
       - "multicats/providers/**"
       - "multicats/controllers/**"
+      - "multicats/schedulers/**"
+      - "multicats/models.py"
       - "tests/e2e/**"
       - ".github/workflows/e2e.yml"
 
