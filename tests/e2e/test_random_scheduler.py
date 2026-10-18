@@ -6,7 +6,6 @@ The scheduler assigns start times; SlurmController applies them; the test
 verifies Slurm reflects the correct StartTime.
 """
 
-import subprocess
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -14,6 +13,7 @@ import pytest
 from multicats.controllers.slurm import SlurmController, SlurmControllerConfig
 from multicats.providers.slurm_cli import SlurmCLIConfig, SlurmCLIProvider
 from multicats.schedulers.random import RandomConfig, RandomScheduler
+from tests.e2e.conftest import submit_held_jobs
 
 pytestmark = pytest.mark.e2e
 
@@ -34,23 +34,7 @@ def controller() -> SlurmController:
 @pytest.fixture(scope="module")
 def held_jobs(controller: SlurmController) -> list[str]:
     """Submit NUM_JOBS to the multicats partition; cancel on teardown."""
-    job_ids = []
-    for _ in range(NUM_JOBS):
-        result = subprocess.run(
-            [
-                "sbatch",
-                "--partition=multicats",
-                "--time=0:30:00",
-                "--ntasks=1",
-                "--parsable",
-                "--wrap",
-                "sleep 1800",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        job_ids.append(result.stdout.strip().split(";")[0])
+    job_ids = submit_held_jobs(NUM_JOBS)
 
     yield job_ids
 

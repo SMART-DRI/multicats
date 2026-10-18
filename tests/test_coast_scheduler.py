@@ -1,10 +1,7 @@
 from datetime import UTC, datetime, timedelta
-from typing import ClassVar, Final
+from typing import Final
 
 import pytest
-from cats.forecast import PointEstimate, Timeseries
-from cats.providers.base import BaseProvider
-from typing_extensions import override
 
 from multicats.models import JobParams
 from multicats.schedulers.coast import (
@@ -14,49 +11,13 @@ from multicats.schedulers.coast import (
     calibrate,
     slot_origin,
 )
+from tests.fakes import FakeProvider
 
 NOW = datetime(2025, 1, 1, 12, 7, tzinfo=UTC)  # current slot starts 12:00
 HR: Final[timedelta] = timedelta(hours=1)
 SLOT: Final[timedelta] = timedelta(minutes=30)
 ORIGIN: Final[datetime] = datetime(2025, 1, 1, 12, 0, tzinfo=UTC)
 ARRIVAL: Final[datetime] = NOW - timedelta(minutes=2)
-
-
-class FakeProvider(BaseProvider):
-    BASE_URL: ClassVar[str] = "https://example.invalid"
-
-    def __init__(
-        self, start: datetime, values: list[float], resolution: int = 30
-    ) -> None:
-        super().__init__()
-        self.resolution: int = resolution
-        step = timedelta(minutes=resolution)
-        self.points: list[PointEstimate] = [
-            PointEstimate(value=v, datetime=start + i * step)
-            for i, v in enumerate(values)
-        ]
-
-    @override
-    def validate_location(self, location: str | None) -> str:
-        return location or ""
-
-    @override
-    def get_max_duration_minutes(self, metric: str | None = None) -> int:
-        return 2820
-
-    @override
-    def get_temporal_resolution_minutes(self, metric: str | None = None) -> int:
-        return self.resolution
-
-    @override
-    def get_data(
-        self,
-        timestamp: datetime,
-        location: str | None = None,
-        metric: str | None = None,
-        headers: dict[str, str] | None = None,
-    ) -> Timeseries:
-        return Timeseries("Carbon intensity", values=self.points, unit="gCO2eq/kWh")
 
 
 def make_job(
