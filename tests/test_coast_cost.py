@@ -1,5 +1,4 @@
 import pytest
-
 from multicats.schedulers.coast import (
     CoastConfig,
     _best_slot,

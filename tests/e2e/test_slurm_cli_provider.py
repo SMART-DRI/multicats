@@ -6,7 +6,6 @@ Run inside the slurmctld container after ./cluster/install_multicats.sh.
 from datetime import timedelta
 
 import pytest
-
 from multicats.providers.slurm_cli import SlurmCLIConfig, SlurmCLIProvider
 
 pytestmark = pytest.mark.e2e
