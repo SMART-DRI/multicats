@@ -4,6 +4,7 @@ import subprocess
 from datetime import UTC, datetime
 
 import pytest
+
 from multicats.controllers.slurm import SlurmController
 
 # scontrol show job for a released job waiting on resources: the begin time

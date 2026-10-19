@@ -45,10 +45,11 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from itertools import accumulate
 from statistics import median
+from typing import Self
 
 from cats.providers import get_provider
 from cats.providers.base import BaseProvider
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from ..interfaces import Scheduler
 from ..models import JobParams

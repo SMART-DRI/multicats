@@ -5,13 +5,14 @@ from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from typing_extensions import override
+
 from multicats.cli import COMMANDS, UsageError, main, parser
 from multicats.cli.schedule import build_scheduler, parse_held, schedule_held
 from multicats.interfaces import Controller, QueueProvider, Scheduler
 from multicats.models import JobParams
 from multicats.schedulers import SCHEDULERS, CoastScheduler
 from multicats.schedulers.random import RandomConfig, RandomScheduler
-from typing_extensions import override
 
 NOW = datetime(2026, 10, 18, 17, 0, tzinfo=UTC)
 START = datetime(2026, 10, 18, 17, 30, tzinfo=UTC)

@@ -4,9 +4,7 @@ import argparse
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from datetime import datetime
-from typing import ClassVar
-
-from typing_extensions import Self
+from typing import ClassVar, Self
 
 from .models import JobParams
 

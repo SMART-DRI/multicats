@@ -2,8 +2,9 @@ import argparse
 import random
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Self
 
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from ..interfaces import Scheduler
 from ..models import JobParams
