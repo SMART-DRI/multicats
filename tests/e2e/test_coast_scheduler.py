@@ -160,7 +160,7 @@ def test_start_times_applied_to_slurm(
     for job_id, start in assignments.items():
         assert start is not None
         expected = max(start, floor)
-        actual = controller.start_time(job_id)
+        actual = controller.begin_time(job_id)
         assert actual is not None, f"Job {job_id} has no start time in Slurm"
         diff = abs((actual - expected).total_seconds())
         assert diff <= 60, (
@@ -208,7 +208,7 @@ def test_rejected_job_is_not_released(
 
     _apply({long_id: result[long_id]}, controller)
     # still held by job_submit.lua, a year out
-    start = controller.start_time(long_id)
+    start = controller.begin_time(long_id)
     assert start is None or start > now + timedelta(days=300), (
         f"Rejected job {long_id} has start time {start}"
     )

@@ -45,15 +45,23 @@ class SlurmController(Controller):
     def cancel(self, job_id: str) -> None:
         subprocess.run(["scancel", job_id], check=False)
 
-    def start_time(self, job_id: str) -> datetime | None:
-        """Return the StartTime Slurm has recorded for a job, or None."""
+    def begin_time(self, job_id: str) -> datetime | None:
+        """Return the begin time Slurm has recorded for a job, or None.
+
+        This is what release() sets: ``scontrol update StartTime=`` changes
+        the job's begin time, shown as ``EligibleTime``. The ``StartTime``
+        shown for a pending job is Slurm's estimate, which is later than the
+        begin time when the job has to wait for resources.
+        """
         result = subprocess.run(
             ["scontrol", "show", "job", job_id],
             capture_output=True,
             text=True,
             check=True,
         )
-        m = re.search(r"StartTime=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})", result.stdout)
+        m = re.search(
+            r"EligibleTime=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})", result.stdout
+        )
         if m:
             return datetime.strptime(m.group(1), "%Y-%m-%dT%H:%M:%S").replace(
                 tzinfo=UTC
