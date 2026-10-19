@@ -12,6 +12,9 @@ dependencies = [
     "climate-aware-task-scheduler @ git+https://github.com/GreenScheduler/cats.git",
 ]
 
+[project.scripts]
+multicats = "multicats.cli:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov"]
 
