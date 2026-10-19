@@ -1,8 +1,9 @@
+import argparse
 import random
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
-from typing_extensions import override
+from typing_extensions import Self, override
 
 from ..interfaces import Scheduler
 from ..models import JobParams
@@ -15,6 +16,26 @@ class RandomConfig:
 
 
 class RandomScheduler(Scheduler):
+    description = "uniformly random start times (baseline)"
+
+    @override
+    @classmethod
+    def add_arguments(cls, group: argparse._ArgumentGroup) -> None:  # pyright: ignore[reportPrivateUsage]
+        _ = group.add_argument(
+            "--window-hours",
+            type=float,
+            default=RandomConfig().window / timedelta(hours=1),
+            help="latest start, in hours after submission (default: %(default)s)",
+        )
+        _ = group.add_argument("--seed", type=int, help="random seed")
+
+    @override
+    @classmethod
+    def from_args(cls, args: argparse.Namespace) -> Self:
+        return cls(
+            RandomConfig(window=timedelta(hours=args.window_hours), seed=args.seed)
+        )
+
     def __init__(self, config: RandomConfig | None = None) -> None:
         self.config: RandomConfig = config or RandomConfig()
         self._rng = random.Random(self.config.seed)

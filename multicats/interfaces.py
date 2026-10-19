@@ -1,8 +1,12 @@
 """Abstract interfaces for the three pluggable components."""
 
+import argparse
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from datetime import datetime
+from typing import ClassVar
+
+from typing_extensions import Self
 
 from .models import JobParams
 
@@ -29,7 +33,27 @@ class Scheduler(ABC):
     Each concrete scheduler carries its own configuration (passed via __init__).
     The generic interface only exposes the assign() method so the daemon loop
     can drive any scheduler uniformly.
+
+    A scheduler that can be picked on the command line also implements
+    add_arguments() and from_args(), and is registered in
+    ``multicats.schedulers.SCHEDULERS``.
     """
+
+    description: ClassVar[str] = ""  # one line, shown in --help
+
+    @classmethod
+    def add_arguments(cls, group: argparse._ArgumentGroup) -> None:  # pyright: ignore[reportPrivateUsage]
+        """Add this scheduler's command-line options to ``group``."""
+
+    @classmethod
+    def from_args(cls, args: argparse.Namespace) -> Self:
+        """Build the scheduler from parsed command-line options.
+
+        Raises ValueError if the options are incomplete.
+        """
+        raise NotImplementedError(
+            f"{cls.__name__} cannot be configured from the command line"
+        )
 
     @abstractmethod
     def assign(
