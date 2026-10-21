@@ -15,15 +15,19 @@ independently picking the greenest slot (and all of them piling into it),
 MultiCATS assigns start times across the pending queue jointly, trading carbon
 intensity off against user-visible delay and cluster congestion.
 
-> **Status: early development.** The data model, provider, controller and
-> baseline schedulers exist; the COAST scheduler's `assign()` and the daemon
-> loop that ties the components together are not implemented yet. See
+> **Status: early development.** The data model, provider, controller, the
+> random baseline and the COAST scheduler are implemented. There is no
+> long-running daemon yet: the `multicats schedule` command runs one microbatch,
+> and [DEPLOYMENT.md](DEPLOYMENT.md) shows how to run it on a schedule. See
 > [docs/features/plan.md](docs/features/plan.md) for what is done and what is next.
 
 ## How it works
 
-This is a brief description of the COAST scheduling algorithm, for more details see
-LINK. MultiCATS is written to be easily extendable to support multiple scheduling algorithms.
+This is a brief description of the COAST scheduling algorithm. For details see
+W. Feng et al., [COAST: Congestion-Aware Start-Time Recommendations for
+Carbon-Aware HPC Jobs](https://arxiv.org/abs/2609.05443) (IEEE GreenCom 2026)
+and the module docstring in
+[multicats/schedulers/coast.py](multicats/schedulers/coast.py). MultiCATS is written to be easily extendable to support multiple scheduling algorithms.
 
 Each pending job is described by `(a, r, d, e_hat, D, m)` — arrival, resource
 demand, runtime, estimated energy, deadline, and maximum acceptable wait — and
@@ -67,11 +71,19 @@ each selected by name in `StaticConfig`:
   `ConsumedEnergyRaw` where accounting provides it, otherwise from a
   CPU-wattage heuristic.
 - **`Scheduler`** — maps pending jobs plus background load to `{job_id: start}`.
-  Each scheduler owns its own config dataclass. `random` is implemented as a
-  baseline; `coast` is the real one; `fifo` is planned.
+  Each scheduler owns its own config dataclass and its command-line options
+  (`add_arguments()` / `from_args()`). `random` is implemented as a baseline;
+  `coast` is the real one; `fifo` is planned. `multicats schedule --scheduler`
+  picks one (default `coast`) from the `SCHEDULERS` registry in
+  [multicats/schedulers/\_\_init\_\_.py](multicats/schedulers/__init__.py).
 - **`Controller`** — applies the assignment. `slurm` holds and releases jobs via
   `scontrol` / `scancel`, clamping start times to at least `min_lead_time` in
   the future because Slurm silently discards start times in the past.
+
+The `multicats` command line is extensible the same way: each subcommand
+(currently `schedule`) is a `Command` registered in `COMMANDS` in
+[multicats/cli/\_\_init\_\_.py](multicats/cli/__init__.py). To add one, write
+a module in `multicats/cli/` that defines a `Command` and register it there.
 
 File structure:
 ```
@@ -82,12 +94,25 @@ multicats/
   providers/      slurm_cli.py
   schedulers/     coast.py, random.py
   controllers/    slurm.py
+  cli/            the multicats command; schedule.py runs one microbatch
 ```
 
 Jobs are gated at submission by a Lua job-submit plugin
 ([cluster/job_submit.lua](cluster/job_submit.lua)): anything landing in the
 `multicats` partition gets a begin time a year out, so it cannot start until
 MultiCATS moves it.
+
+## Deploying on a cluster
+
+[DEPLOYMENT.md](DEPLOYMENT.md) covers installing MultiCATS on a Slurm cluster:
+creating the partition, installing the job-submit plugin, running COAST every
+few minutes with a systemd timer or cron, and monitoring what it does. The
+command it runs is:
+
+```bash
+multicats schedule --location OX1 --dry-run   # drop --dry-run to apply start times
+multicats schedule --scheduler random --dry-run   # baseline, no carbon forecast
+```
 
 ## Install
 
@@ -106,7 +131,10 @@ Unit tests need nothing but Python — e2e tests are excluded by default via the
 uv run pytest
 ```
 
-The e2e tests need a live Slurm cluster. A disposable one runs in Docker:
+The e2e tests need a live Slurm cluster. A disposable one runs in Docker, as
+the Compose project `multicats`. Its containers have fixed names (`mysql`,
+`slurmdbd`, `slurmctld`, `c1`, `c2`), so stop any other Slurm Docker cluster
+using those names first:
 
 ```bash
 ./cluster/test_e2e.sh      # start cluster, install plugin + package, run e2e, tear down
@@ -126,6 +154,7 @@ behaviour directly — useful when the controller's assignments do not take.
 
 ## Docs
 
+- [DEPLOYMENT.md](DEPLOYMENT.md) — installing and running MultiCATS on a Slurm cluster
 - [docs/features/features.md](docs/features/features.md) — feature list and cost-function detail
 - [docs/features/plan.md](docs/features/plan.md) — phased implementation plan and open questions
 - [docs/architecture_source.md](docs/architecture_source.md) — original design notes

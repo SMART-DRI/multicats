@@ -1,6 +1,6 @@
 -- /etc/slurm/job_submit.lua
 -- Hold all jobs submitted to the "multicats" partition until
--- MultiCATS assigns a start time via scontrol update BeginTime.
+-- MultiCATS sets the begin time via scontrol update StartTime.
 
 local FAR_FUTURE = 365 * 24 * 60 * 60  -- 1 year
 

@@ -38,13 +38,16 @@ With a quadratic ``psi`` each batch is an exact potential game, so sequential
 strict best response terminates at a pure Nash equilibrium.
 """
 
+import argparse
 import math
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from itertools import accumulate
 from statistics import median
+from typing import Self
 
+from cats.providers import get_provider
 from cats.providers.base import BaseProvider
 from typing_extensions import override
 
@@ -408,6 +411,56 @@ def _carbon_slots(
 
 class CoastScheduler(Scheduler):
     """Congestion-aware start-time recommendations (COAST)."""
+
+    description = "congestion-aware, carbon-aware start times"
+
+    @override
+    @classmethod
+    def add_arguments(cls, group: argparse._ArgumentGroup) -> None:  # pyright: ignore[reportPrivateUsage]
+        defaults = CoastConfig()
+        _ = group.add_argument(
+            "--location",
+            help="location for the carbon-intensity forecast, e.g. a UK outcode "
+            + "(required for coast)",
+        )
+        _ = group.add_argument(
+            "--api",
+            default="carbonintensity.org.uk",
+            help="CATS carbon-intensity provider (default: %(default)s)",
+        )
+        _ = group.add_argument(
+            "--carbon-weight",
+            type=float,
+            default=defaults.carbon_weight,
+            help="carbon weight, alpha (default: %(default)s)",
+        )
+        _ = group.add_argument(
+            "--delay-weight",
+            type=float,
+            default=defaults.delay_weight,
+            help="delay weight, beta (default: %(default)s)",
+        )
+        _ = group.add_argument(
+            "--congestion-weight",
+            type=float,
+            default=defaults.congestion_weight,
+            help="congestion weight, gamma (default: %(default)s)",
+        )
+
+    @override
+    @classmethod
+    def from_args(cls, args: argparse.Namespace) -> Self:
+        if not args.location:
+            raise ValueError("the coast scheduler needs --location")
+        return cls(
+            get_provider(args.api)(),
+            CoastConfig(
+                carbon_weight=args.carbon_weight,
+                delay_weight=args.delay_weight,
+                congestion_weight=args.congestion_weight,
+                location=args.location,
+            ),
+        )
 
     def __init__(
         self,

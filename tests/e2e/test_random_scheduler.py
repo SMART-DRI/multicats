@@ -3,7 +3,7 @@
 Jobs are submitted to the "multicats" partition, where the job_submit.lua
 plugin holds them by setting BeginTime one year in the future.
 The scheduler assigns start times; SlurmController applies them; the test
-verifies Slurm reflects the correct StartTime.
+verifies Slurm reflects the correct begin time (EligibleTime).
 """
 
 from datetime import UTC, datetime, timedelta
@@ -100,7 +100,7 @@ def test_start_times_applied_to_slurm(
     # Slurm rounds to the minute — allow ±60s tolerance.
     for job_id, start in assignments.items():
         expected = max(start, floor)
-        actual = controller.start_time(job_id)
+        actual = controller.begin_time(job_id)
         assert actual is not None, f"Job {job_id} has no start time in Slurm"
         diff = abs((actual - expected).total_seconds())
         assert diff <= 60, (
