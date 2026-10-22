@@ -8,6 +8,7 @@ from typing_extensions import override
 
 from ..interfaces import QueueProvider
 from ..models import JobParams
+from ..slurm import run_slurm
 
 SlurmObj = dict[str, Any]
 
@@ -48,7 +49,7 @@ class SlurmCLIProvider(QueueProvider):
         self.config: SlurmCLIConfig = config or SlurmCLIConfig()
 
     def _run(self, *args: str) -> SlurmObj:
-        result = subprocess.run(args, capture_output=True, text=True, check=True)
+        result = run_slurm(list(args), capture_output=True, check=True)
         return json.loads(result.stdout)  # type: ignore[no-any-return]
 
     @override

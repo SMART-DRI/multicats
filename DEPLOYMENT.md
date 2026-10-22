@@ -35,10 +35,6 @@ is scheduled exactly once.
 - **Operator privileges for the task.** It changes start times on other
   users' jobs, so it must run as root, as `SlurmUser`, or as an account set as
   an operator with `sacctmgr`.
-- **Slurm times in UTC.** `SlurmController` sends start times to `scontrol` as
-  UTC with no time zone, and reads them back the same way. If slurmctld runs in
-  another time zone, every start time will be off by that offset. Run
-  slurmctld with `TZ=UTC`, or don't deploy until this is fixed.
 - **Outbound HTTPS** from the host to the carbon-intensity API, for the
   default COAST scheduler. The `random` baseline needs no network access.
 
@@ -287,6 +283,10 @@ It logs which scheduler it used, one line per held job, then a summary:
 2026-10-18 17:35:53,819 multicats INFO assigned 3 of 3 held jobs
 ```
 
+Start times in the log are UTC (`+00:00`). MultiCATS runs the Slurm commands
+it calls with `TZ=UTC`, so the host and slurmctld can be in any time zone;
+`squeue` and `scontrol` run from your shell show the same times in local time.
+
 Run it again without `--dry-run`, and check that `squeue` shows the new start
 times. A third run should log `no held jobs in partition multicats`.
 
@@ -326,7 +326,6 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 ExecStart=/opt/multicats/bin/multicats schedule --location OX1
-Environment=TZ=UTC
 ```
 
 `/etc/systemd/system/multicats-schedule.timer`:
@@ -359,7 +358,7 @@ timer fires, systemd skips that start.
 `/etc/cron.d/multicats`:
 
 ```
-*/5 * * * * root TZ=UTC flock -n /run/multicats-schedule.lock /opt/multicats/bin/multicats schedule --location OX1 >> /var/log/multicats.log 2>&1
+*/5 * * * * root flock -n /run/multicats-schedule.lock /opt/multicats/bin/multicats schedule --location OX1 >> /var/log/multicats.log 2>&1
 ```
 
 `flock -n` skips a run if the previous one is still going. Add
@@ -457,4 +456,3 @@ To stop using MultiCATS:
   forecast would move it.
 - **Energy estimates are rough.** With no energy accounting, energy comes from
   a fixed watts-per-CPU estimate (`SlurmCLIConfig.watts_per_cpu`).
-- **Start times must be UTC.** See [Requirements](#requirements).

@@ -1,11 +1,11 @@
 import re
-import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from typing_extensions import override
 
 from ..interfaces import Controller
+from ..slurm import run_slurm
 
 
 @dataclass
@@ -30,20 +30,20 @@ class SlurmController(Controller):
 
     @override
     def hold(self, job_id: str) -> None:
-        subprocess.run(["scontrol", "hold", job_id], check=True)
+        run_slurm(["scontrol", "hold", job_id], check=True)
 
     @override
     def release(self, job_id: str, start: datetime) -> None:
-        effective = self._effective_start(start)
-        begin_str = effective.strftime("%Y-%m-%dT%H:%M:%S")
-        subprocess.run(
+        effective = self._effective_start(start).astimezone(UTC)
+        begin_str = effective.strftime("%Y-%m-%dT%H:%M:%S")  # UTC, see run_slurm
+        run_slurm(
             ["scontrol", "update", f"JobId={job_id}", f"StartTime={begin_str}"],
             check=True,
         )
 
     @override
     def cancel(self, job_id: str) -> None:
-        subprocess.run(["scancel", job_id], check=False)
+        run_slurm(["scancel", job_id], check=False)
 
     def begin_time(self, job_id: str) -> datetime | None:
         """Return the begin time Slurm has recorded for a job, or None.
@@ -52,12 +52,12 @@ class SlurmController(Controller):
         the job's begin time, shown as ``EligibleTime``. The ``StartTime``
         shown for a pending job is Slurm's estimate, which is later than the
         begin time when the job has to wait for resources.
+
+        Slurm prints it without a time zone; it is UTC because run_slurm runs
+        scontrol with ``TZ=UTC``.
         """
-        result = subprocess.run(
-            ["scontrol", "show", "job", job_id],
-            capture_output=True,
-            text=True,
-            check=True,
+        result = run_slurm(
+            ["scontrol", "show", "job", job_id], capture_output=True, check=True
         )
         m = re.search(
             r"EligibleTime=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})", result.stdout

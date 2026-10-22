@@ -1,12 +1,18 @@
 """Unit tests for the multicats CLI — no Slurm installation required."""
 
 import argparse
+import subprocess
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from multicats.cli import COMMANDS, UsageError, main, parser
-from multicats.cli.schedule import build_scheduler, parse_held, schedule_held
+from multicats.cli.schedule import (
+    build_scheduler,
+    held_job_ids,
+    parse_held,
+    schedule_held,
+)
 from multicats.interfaces import Controller, QueueProvider, Scheduler
 from multicats.models import JobParams
 from multicats.schedulers import SCHEDULERS, CoastScheduler
@@ -92,6 +98,21 @@ def test_parse_held_skips_unknown_start(start: str) -> None:
 def test_parse_held_empty_output() -> None:
     assert parse_held("", NOW) == set()
     assert parse_held("\n", NOW) == set()
+
+
+def test_held_job_ids_runs_squeue_in_utc(monkeypatch: pytest.MonkeyPatch) -> None:
+    envs: list[str] = []
+
+    def run(
+        args: list[str], env: dict[str, str], **_: object
+    ) -> subprocess.CompletedProcess[str]:
+        envs.append(env["TZ"])
+        return subprocess.CompletedProcess(args, 0, stdout="1 2099-01-01T00:00:00\n")
+
+    monkeypatch.setenv("TZ", "Europe/London")
+    monkeypatch.setattr(subprocess, "run", run)
+    assert held_job_ids("multicats") == {"1"}
+    assert envs == ["UTC"]
 
 
 # schedule_held
