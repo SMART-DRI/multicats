@@ -13,10 +13,10 @@ from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from multicats.cli.schedule import held_job_ids
 from multicats.controllers.slurm import SlurmController
 from multicats.schedulers.coast import slot_origin
+
 from tests.e2e.conftest import submit_held_jobs
 
 pytestmark = pytest.mark.e2e

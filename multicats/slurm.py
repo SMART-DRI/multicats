@@ -18,4 +18,4 @@ def slurm_env() -> dict[str, str]:
 def run_slurm(args: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
     """Run a Slurm command with :func:`slurm_env`; ``kwargs`` go to
     :func:`subprocess.run`."""
-    return subprocess.run(args, env=slurm_env(), text=True, **kwargs)
+    return subprocess.run(args, check=False, env=slurm_env(), text=True, **kwargs)

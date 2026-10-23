@@ -3,7 +3,6 @@
 import subprocess
 
 import pytest
-
 from multicats.slurm import run_slurm, slurm_env
 
 
