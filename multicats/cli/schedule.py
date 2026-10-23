@@ -7,7 +7,6 @@ it every few minutes from a systemd timer or cron; see DEPLOYMENT.md.
 
 import argparse
 import logging
-import subprocess
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 
@@ -15,6 +14,7 @@ from ..controllers.slurm import SlurmController, SlurmControllerConfig
 from ..interfaces import Controller, QueueProvider, Scheduler
 from ..providers.slurm_cli import SlurmCLIConfig, SlurmCLIProvider
 from ..schedulers import DEFAULT_SCHEDULER, SCHEDULERS
+from ..slurm import run_slurm
 from .base import Command, UsageError
 
 # job_submit.lua sets BeginTime a year out; a job starting further out than
@@ -28,7 +28,8 @@ def parse_held(squeue_output: str, now: datetime) -> set[str]:
     """Job IDs from ``squeue --Format=JobID,EligibleTime`` output that are
     still held, i.e. whose begin time is still about a year out.
 
-    Slurm prints times without a time zone; they are read as UTC.
+    Slurm prints times without a time zone; they are UTC because
+    :func:`~multicats.slurm.run_slurm` runs squeue with ``TZ=UTC``.
     """
     cutoff = now + HELD_AFTER
     held: set[str] = set()
@@ -45,7 +46,7 @@ def parse_held(squeue_output: str, now: datetime) -> set[str]:
 
 def held_job_ids(partition: str) -> set[str]:
     """IDs of pending jobs in ``partition`` that have no assigned start yet."""
-    out = subprocess.run(
+    out = run_slurm(
         [
             "squeue",
             "--noheader",
@@ -54,7 +55,6 @@ def held_job_ids(partition: str) -> set[str]:
             "--Format=JobID,EligibleTime",
         ],
         capture_output=True,
-        text=True,
         check=True,
     ).stdout
     return parse_held(out, datetime.now(tz=UTC))
