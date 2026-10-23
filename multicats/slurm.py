@@ -15,7 +15,9 @@ def slurm_env() -> dict[str, str]:
     return {**os.environ, "TZ": "UTC"}
 
 
-def run_slurm(args: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
-    """Run a Slurm command with :func:`slurm_env`; ``kwargs`` go to
-    :func:`subprocess.run`."""
-    return subprocess.run(args, check=False, env=slurm_env(), text=True, **kwargs)
+def run_slurm(
+    args: list[str], *, check: bool = False, **kwargs: Any
+) -> subprocess.CompletedProcess[str]:
+    """Run a Slurm command with :func:`slurm_env`; ``check`` and ``kwargs``
+    go to :func:`subprocess.run`."""
+    return subprocess.run(args, check=check, env=slurm_env(), text=True, **kwargs)
